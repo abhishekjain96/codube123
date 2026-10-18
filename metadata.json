@@ -1,0 +1,5 @@
+{
+  "name": "Codube",
+  "description": "Turn your ideas into a beautiful, functional website. Design visually, make changes with AI, and generate production-ready code.",
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
