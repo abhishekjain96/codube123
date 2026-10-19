@@ -5,15 +5,17 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Globe, Sparkles, Terminal } from "lucide-react";
 
 const promptChips = [
-  "A modern coffee shop website",
-  "A SaaS landing page",
-  "A dashboard for doctors",
+  "Apple-style 3D Watch with Aceternity tilt & cart",
+  "Next-Gen SaaS with Magic UI Bento & Neon Postgres",
+  "AI Autonomous Agents Hub with glowing laser beams",
+  "High-frequency Fintech platform with Claude Code CLI",
 ];
 
 const urlChips = [
-  { label: "https://www.airbnb.com", desc: "Vacation Rentals" },
-  { label: "https://linear.app", desc: "SaaS Dev Tool" },
-  { label: "https://stripe.com", desc: "Fintech Payments" },
+  { label: "https://linear.app", desc: "Linear (SaaS Dev Tool)" },
+  { label: "https://stripe.com", desc: "Stripe (Fintech Infrastructure)" },
+  { label: "https://supabase.com", desc: "Supabase (Cloud Platform)" },
+  { label: "https://www.airbnb.com", desc: "Airbnb (Vacation Rentals)" },
 ];
 
 export default function HeroPrompt({

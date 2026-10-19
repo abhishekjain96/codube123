@@ -26,9 +26,28 @@ export type Project = {
     sourceUrl?: string;
     domain?: string;
     analyzedAt?: string;
+    archetype?: string;
     detectedTaxonomy?: string[];
     extractedColors?: { primary: string; secondary: string; dark: boolean };
     workerLogs?: string[];
+    claudeCodePrompt?: string;
+    claudeMdContent?: string;
+    tokens?: {
+      primaryColor: string;
+      secondaryColor: string;
+      backgroundColor: string;
+      textColor: string;
+      fontHeading: string;
+      fontBody: string;
+      borderRadius: string;
+    };
+    designLogic?: {
+      layoutRhythm: string;
+      componentHierarchy: string[];
+      copyTone: string;
+      targetAudience: string;
+      valuePropositions: string[];
+    };
   } | null;
 };
 

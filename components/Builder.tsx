@@ -10,6 +10,7 @@ import CodeStudio from "./CodeStudio";
 import DeployModal from "./DeployModal";
 import LiveCodeViewer from "./LiveCodeViewer";
 import ReaInspectorModal from "./ReaInspectorModal";
+import McpStudioModal from "./McpStudioModal";
 import SiteRenderer, { normalize, parseSite, type EditApi, type Item, type Loc, type Section, type SiteDoc, type Theme } from "./SiteRenderer";
 import { ADDABLE, type Addable } from "@/lib/blockDefaults";
 import { API_BASE, chatProject, createProjectFromUrl, getProject, requestImages, saveSite, uploadImage } from "@/lib/api";
@@ -185,8 +186,39 @@ export default function Builder() {
   const [studioOpen, setStudioOpen] = useState(false);
   const [deployOpen, setDeployOpen] = useState(false);
   const [reaOpen, setReaOpen] = useState(false);
+  const [mcpOpen, setMcpOpen] = useState(false);
   const [projectData, setProjectData] = useState<any>(null);
   const [hist, setHist] = useState({ past: 0, future: 0 });
+
+  function handleInjectComponent(snippet: any) {
+    if (!doc) return;
+    const currentSections = doc.sections || [];
+    const newSection: Section = {
+      type: snippet.category === "bento" ? "features" : snippet.category === "hero" ? "hero" : "features",
+      badge: `✦ ${snippet.source}`,
+      title: snippet.name,
+      subtitle: snippet.description,
+      items: [
+        { title: "3D Spatial Perspective", description: "GPU-accelerated tilt responding to mouse coordinates.", desc: "GPU-accelerated tilt responding to mouse coordinates." },
+        { title: "Sub-millisecond Edge Latency", description: "Engineered for 60fps framerate on all modern devices.", desc: "Engineered for 60fps framerate on all modern devices." },
+        { title: "Full-Stack Ready", description: "Direct integration with Neon Postgres and Next.js 15.", desc: "Direct integration with Neon Postgres and Next.js 15." },
+      ],
+    };
+    const nextDoc: SiteDoc = {
+      ...doc,
+      sections: [...currentSections, newSection],
+    };
+    docRef.current = nextDoc;
+    setDoc(nextDoc);
+    commit(nextDoc);
+    setMessages((m) => [
+      ...m,
+      {
+        role: "ai",
+        text: `Injected "${snippet.name}" (${snippet.source}) into your live website! Inspect the 3D interaction in Preview mode or review the code.`,
+      },
+    ]);
+  }
 
   async function handleRunRea(targetUrl: string, instructions: string) {
     setThinking(true);
@@ -690,15 +722,24 @@ export default function Builder() {
           </div>
         </div>
 
-        {/* Right: undo/redo + REA Inspector button + deploy + code studio + user */}
+        {/* Right: MCP Studio + REA Inspector + undo/redo + deploy */}
         <div className="flex items-center gap-2 text-sm font-medium">
+          <button
+            onClick={() => setMcpOpen(true)}
+            className="btn-shine flex items-center gap-1.5 rounded-xl border border-violet-500/40 bg-gradient-to-r from-violet-600/30 to-indigo-600/30 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-violet-600/40 shadow-sm"
+            title="Open Autonomous Multi-Agent Squad (Claude Code, Google Argon, Nemotron, Wonder/Muse, Jev) and MCP 3D Component Vault"
+          >
+            <Bot size={13} className="text-violet-300" />
+            <span>Agent Squad & MCP Vault</span>
+          </button>
+
           <button
             onClick={() => setReaOpen(true)}
             className="flex items-center gap-1.5 rounded-xl border border-violet-500/30 bg-violet-500/10 px-2.5 py-1.5 text-xs font-semibold text-violet-300 transition hover:bg-violet-500/20 shadow-sm"
             title="Inspect REA extraction tokens or reverse engineer a new URL"
           >
             <Globe size={13} className="text-orange-400" />
-            <span>{projectData?.reaMetadata?.domain ? `REA: ${projectData.reaMetadata.domain}` : "✦ REA Reverse Engineer"}</span>
+            <span>{projectData?.reaMetadata?.domain ? `REA: ${projectData.reaMetadata.domain}` : "REA Decompiler"}</span>
           </button>
 
           <button className={iconBtn} title="Undo (Ctrl+Z)" aria-label="Undo" disabled={!canUndo} onClick={undo}><Undo2 size={15} /></button>
@@ -1672,6 +1713,31 @@ export default function Builder() {
           project={projectData}
           onClose={() => setReaOpen(false)}
           onRunRea={handleRunRea}
+        />
+      )}
+
+      {mcpOpen && (
+        <McpStudioModal
+          onClose={() => setMcpOpen(false)}
+          onInjectComponent={handleInjectComponent}
+          onApplySite={(site) => {
+            const parsed = parseSite(JSON.stringify(site));
+            if (parsed) {
+              const up = upgrade(parsed);
+              docRef.current = up;
+              setDoc(up);
+              commit(up);
+              setMessages((m) => [
+                ...m,
+                {
+                  role: "ai",
+                  text: `Multi-Agent Squad has generated and applied "${site.brand?.name || "Next-Level SaaS"}"! Live 3D spatial tilts, responsive magic bento grid, and full-stack schemas are now active on your canvas.`,
+                },
+              ]);
+            }
+          }}
+          accent={doc?.theme?.accent || "#8b5cf6"}
+          initialPrompt={projectData?.idea || ""}
         />
       )}
     </div>

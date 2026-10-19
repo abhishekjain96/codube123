@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Bold, Check, ChevronDown, ChevronUp, Copy, Image as ImageIcon, Italic, Menu, Palette, Plus, RotateCcw, ShoppingCart, Sparkles, Star, Trash2, Underline, X } from "lucide-react";
 
 export type Item = {
-  image?: string; icon?: string; emoji?: string; title?: string; description?: string; price?: string;
+  image?: string; icon?: string; emoji?: string; title?: string; description?: string; desc?: string; text?: string; price?: string;
   badge?: string; value?: string; label?: string; quote?: string; name?: string; role?: string;
   question?: string; answer?: string; features?: string[]; highlighted?: boolean; cta?: string;
   size?: string; stat?: string; change?: string;
@@ -143,8 +143,32 @@ const FONTS: Record<string, string> = {
 
 const cardStyle = (p: Pal) => ({ background: p.card, border: `1px solid ${p.border}`, borderRadius: p.radius });
 const gradText = (p: Pal): CSSProperties => ({
-  background: p.grad, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
+  backgroundImage: p.grad,
+  backgroundRepeat: "no-repeat",
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  WebkitTextFillColor: "transparent",
+  color: "transparent",
+  display: "inline-block",
 });
+
+function sanitizeEdStyle(style?: CSSProperties): CSSProperties | undefined {
+  if (!style) return undefined;
+  const s: any = { ...style };
+  // React 19: Avoid shorthand 'background' when 'backgroundClip' is set to prevent styling warning
+  if (s.backgroundClip || s.WebkitBackgroundClip) {
+    if (s.background) {
+      if (!s.backgroundImage) {
+        s.backgroundImage = s.background;
+      }
+      delete s.background;
+    }
+    if (!s.display) {
+      s.display = "inline-block";
+    }
+  }
+  return s as CSSProperties;
+}
 const inputStyle = (p: Pal): CSSProperties => ({
   borderColor: p.border, borderRadius: p.btnRadius, background: p.bg, color: p.text,
 });
@@ -217,8 +241,9 @@ function Ed({
 
   const isHtml = typeof value === "string" && /<[a-z][\s\S]*>/i.test(value);
   if (!on || !edit) {
-    if (isHtml) return <Tag className={className} style={style} dangerouslySetInnerHTML={{ __html: value }} />;
-    return <Tag className={className} style={style}>{value}</Tag>;
+    const clean = sanitizeEdStyle(style);
+    if (isHtml) return <Tag key={`${f}-${i ?? ""}-${idx ?? ""}`} className={className} style={clean} dangerouslySetInnerHTML={{ __html: value }} />;
+    return <Tag key={`${f}-${i ?? ""}-${idx ?? ""}`} className={className} style={clean}>{value}</Tag>;
   }
 
   function applyColor(color: string) {
@@ -478,7 +503,7 @@ function Ed({
         suppressContentEditableWarning
         spellCheck={false}
         className={`${className} cursor-text rounded-sm outline-none transition hover:outline hover:outline-1 hover:outline-dashed hover:outline-orange-400 focus:outline focus:outline-2 focus:outline-orange-500`}
-        style={style}
+        style={sanitizeEdStyle(style)}
         onClick={(e: React.MouseEvent<HTMLElement>) => e.stopPropagation()}
         onFocus={(e: React.FocusEvent<HTMLElement>) => {
           if (blurTimeout.current) clearTimeout(blurTimeout.current);

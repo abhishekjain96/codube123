@@ -594,13 +594,72 @@ export function generateSiteFromUrl(url: string, instructions?: string): { site:
     pages,
   };
 
+  const claudeCodePrompt = `claude "Reverse engineer and rebuild ${domain}: Using the REA (morluto/rea) design tokens (Brand: ${brandName}, Primary: ${accent}, Secondary: #8b5cf6, Theme: ${dark ? "dark" : "light"}, Font: Inter), create a production Next.js 15 App Router codebase with responsive components: Navbar, Hero, BentoGrid, Stats, Pricing, and Footer. Apply the extracted copywriting and component hierarchy for ${brandName}."`;
+
+  const claudeMdContent = `# CLAUDE.md - Reverse Engineering Agent Guide for ${brandName}
+
+Project reverse-engineered from: **${cleanUrl}** using **morluto/rea (Reverse Engineering Agent)**.
+
+## Build & Dev Commands
+- Install: \`npm install\`
+- Development: \`npm run dev\` (port 3000)
+- Production Build: \`npm run build\`
+
+## Extracted Design Tokens
+- **Brand**: ${brandName}
+- **Category Archetype**: ${category}
+- **Primary Accent**: ${accent}
+- **Secondary Accent**: #8b5cf6
+- **Base Background**: ${dark ? "#06060c" : "#ffffff"}
+- **Base Text**: ${dark ? "#f8fafc" : "#0f172a"}
+- **Heading Font**: Inter / Plus Jakarta Sans
+- **Border Radius**: 16px (cards), 12px (buttons)
+
+## Component Taxonomy
+1. \`components/Navbar.tsx\`: Sticky glassmorphic header with navigation and CTA.
+2. \`components/Hero.tsx\`: Conversion hero with value proposition, badge, and dual actions.
+3. \`components/Bento.tsx\`: Modern asymmetrical feature grid with icons and interactive hovers.
+4. \`components/Stats.tsx\`: Numerical metrics and trust proof points.
+5. \`components/Pricing.tsx\`: Tiered plan matrix with monthly/annual billing toggle.
+6. \`components/Footer.tsx\`: Multi-column links and newsletter subscription.
+
+## Agent Workflow (Claude Code / Cursor)
+Execute this command in your terminal with Claude Code:
+\`\`\`bash
+${claudeCodePrompt}
+\`\`\`
+`;
+
   const rea = {
     sourceUrl: cleanUrl,
     domain,
     analyzedAt: new Date().toISOString(),
+    archetype: category,
     detectedTaxonomy: ["Header/BrandNav", "Hero/ActionSection", "Bento/FeatureGrid", "SocialProof/Reviews", "CTA/Banner", "Footer/MultiColumn"],
     extractedColors: { primary: accent, secondary: "#8b5cf6", dark },
     workerLogs,
+    claudeCodePrompt,
+    claudeMdContent,
+    tokens: {
+      primaryColor: accent,
+      secondaryColor: "#8b5cf6",
+      backgroundColor: dark ? "#06060c" : "#ffffff",
+      textColor: dark ? "#f8fafc" : "#0f172a",
+      fontHeading: "Inter, sans-serif",
+      fontBody: "Inter, sans-serif",
+      borderRadius: "16px",
+    },
+    designLogic: {
+      layoutRhythm: "Generous whitespace, 24px-32px padding, modern bento card layout with 3D hover states",
+      componentHierarchy: ["Navbar", "Hero", "BentoGrid", "Stats", "Pricing", "Testimonials", "CTA", "Footer"],
+      copyTone: isFintech ? "High-trust, security-first, developer-centric" : isDevCloud ? "Technical, high-performance, developer-first" : isTravel ? "Inspiring, exploratory, aspirational" : "Punchy, modern, value-driven",
+      targetAudience: isFintech ? "Fintech builders & businesses" : isDevCloud ? "Software engineers & devops" : "Digital modern users",
+      valuePropositions: [
+        `Re-engineered from ${domain} with pristine Next.js code`,
+        "Zero-dependency design system tokens",
+        "Instant Claude Code CLI export compatibility",
+      ],
+    },
   };
 
   return { site, rea };
@@ -680,16 +739,18 @@ export function createNewProject(idea: string): Project {
 
 export function updateProjectData(
   id: string,
-  data: { heading?: string; dark?: boolean; accent?: string; siteJson?: string }
+  data: { heading?: string; brand?: string; dark?: boolean; accent?: string; siteJson?: string; reaMetadata?: Project["reaMetadata"] }
 ): Project | null {
   const existing = projects.get(id);
   if (!existing) return null;
   const updated: Project = {
     ...existing,
     heading: data.heading !== undefined ? data.heading : existing.heading,
+    brand: data.brand !== undefined ? data.brand : existing.brand,
     dark: data.dark !== undefined ? data.dark : existing.dark,
     accent: data.accent !== undefined ? data.accent : existing.accent,
     siteJson: data.siteJson !== undefined ? data.siteJson : existing.siteJson,
+    reaMetadata: data.reaMetadata !== undefined ? data.reaMetadata : existing.reaMetadata,
   };
   projects.set(id, updated);
   return updated;

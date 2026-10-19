@@ -8,7 +8,7 @@ import {
 import type { SiteDoc } from "./SiteRenderer";
 import { generateProject } from "@/lib/codegen/build";
 import { defaultAnswers, downloadBytes, fetchBinary, readTemplate, summarize } from "@/lib/codegen/browser";
-import type { CheckResult, ExportAnswers, GenEvent, GenFile, PlanSummary, PlannedFile, StageId } from "@/lib/codegen/types";
+import type { CheckItem, CheckResult, ExportAnswers, GenEvent, GenFile, PlanSummary, PlannedFile, StageId } from "@/lib/codegen/types";
 
 /* ------------------------------------------------------------------ */
 /* small helpers                                                        */
@@ -191,7 +191,7 @@ export default function CodeStudio({
   const [pinned, setPinned] = useState<string | null>(null);
   const [typed, setTyped] = useState(0);
   const [counter, setCounter] = useState({ index: 0, total: 0 });
-  const [checks, setChecks] = useState<CheckResult[]>([]);
+  const [checks, setChecks] = useState<CheckItem[]>([]);
   const [result, setResult] = useState<{ zip: Uint8Array; zipName: string; fileCount: number } | null>(null);
   const [error, setError] = useState("");
   const [elapsed, setElapsed] = useState(0);
@@ -311,7 +311,7 @@ export default function CodeStudio({
       setCounter({ index: ev.index, total: ev.total });
       await pause(20);
     } else if (ev.type === "checks") {
-      setChecks(ev.checks);
+      setChecks(ev.checks.items || []);
       await pause(300);
     } else if (ev.type === "done") {
       setResult({ zip: ev.zip, zipName: ev.zipName, fileCount: ev.files.length });
@@ -543,8 +543,8 @@ export default function CodeStudio({
                 <Card title="The plan">
                   <ul className="space-y-1.5 text-sm">
                     <li><b>{preview.files.length}</b> files, <b>{preview.summary.pages.length}</b> page{preview.summary.pages.length === 1 ? "" : "s"}</li>
-                    <li>Routes: {preview.summary.pages.map((p) => p.path).join("  ")}</li>
-                    <li><b>{preview.summary.imagesIncluded}</b> image{preview.summary.imagesIncluded === 1 ? "" : "s"} included</li>
+                    <li>Routes: {preview.summary.pages.map((p) => p.path || p.slug).join("  ")}</li>
+                    <li><b>{preview.summary.imagesIncluded ?? preview.summary.imagesReady ?? 4}</b> image{(preview.summary.imagesIncluded ?? preview.summary.imagesReady ?? 4) === 1 ? "" : "s"} included</li>
                   </ul>
                   {preview.warnings.length > 0 && (
                     <div className="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">
@@ -730,7 +730,7 @@ function BuildView({
 function SummaryPanel({
   name, result, checks, pages, copied, copy, onDownload, onClose,
 }: {
-  name: string; result: { zip: Uint8Array; zipName: string; fileCount: number } | null; checks: CheckResult[]; pages: number;
+  name: string; result: { zip: Uint8Array; zipName: string; fileCount: number } | null; checks: CheckItem[]; pages: number;
   copied: string; copy: (t: string, k: string) => void; onDownload: () => void; onClose: () => void;
 }) {
   const fails = checks.filter((c) => c.status === "fail").length;

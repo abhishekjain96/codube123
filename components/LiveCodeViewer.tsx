@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, Copy, Download, FileCode, FileJson, FileText, Folder, FolderOpen, Layers, Terminal, Zap } from "lucide-react";
+import { Check, Copy, Download, FileCode, FileJson, FolderOpen, Layers, Terminal, Zap } from "lucide-react";
 import JSZip from "jszip";
 import type { Section, SiteDoc } from "./SiteRenderer";
 
@@ -9,7 +9,7 @@ type FileItem = {
   path: string;
   name: string;
   folder: string;
-  language: "typescript" | "json" | "css" | "javascript";
+  language: "typescript" | "json" | "css" | "javascript" | "markdown";
   content: string;
 };
 
@@ -196,7 +196,9 @@ export default function Navbar({ brand }: { brand: string }) {
     for (const sec of sections) {
       const typeName = sec.type.charAt(0).toUpperCase() + sec.type.slice(1).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
       const fileName = `${typeName}.tsx`;
-      if (generatedFiles.some((f) => f.name === fileName)) continue;
+      const isFooterOrNav = typeName.toLowerCase().includes("footer") || typeName.toLowerCase().includes("navbar") || sec.type.toLowerCase().includes("footer") || sec.type.toLowerCase().includes("navbar");
+      if (isFooterOrNav) continue;
+      if (generatedFiles.some((f) => f.name === fileName || f.path === `components/${fileName}`)) continue;
 
       const title = sec.title || `${typeName} Section`;
       const subtitle = sec.subtitle || sec.text || "Experience precision-crafted components designed for speed.";
@@ -243,12 +245,13 @@ export default function ${typeName}({ title = "${title.replace(/"/g, '\\"')}" }:
     }
 
     // 6. components/Footer.tsx
-    generatedFiles.push({
-      path: "components/Footer.tsx",
-      name: "Footer.tsx",
-      folder: "components",
-      language: "typescript",
-      content: `import Link from "next/link";
+    if (!generatedFiles.some((f) => f.path === "components/Footer.tsx")) {
+      generatedFiles.push({
+        path: "components/Footer.tsx",
+        name: "Footer.tsx",
+        folder: "components",
+        language: "typescript",
+        content: `import Link from "next/link";
 
 export default function Footer({ brand }: { brand: string }) {
   return (
@@ -265,7 +268,8 @@ export default function Footer({ brand }: { brand: string }) {
   );
 }
 `,
-    });
+      });
+    }
 
     // 7. tailwind.config.js
     generatedFiles.push({
@@ -339,14 +343,64 @@ module.exports = {
           theme: { primary, secondary, dark: isDark, font },
           sectionsCount: sections.length,
           generatedAt: new Date().toISOString(),
-          engine: "Codube REA (Reverse Engineering Architecture)",
+          engine: "morluto/rea (Reverse Engineering Agent) + Claude Code",
         },
         null,
         2
       ),
     });
 
-    return generatedFiles;
+    // 10. CLAUDE.md for Claude Code CLI
+    generatedFiles.push({
+      path: "CLAUDE.md",
+      name: "CLAUDE.md",
+      folder: "root",
+      language: "markdown",
+      content: `# Claude Code & REA Developer Guide for ${brand}
+
+This project was reverse-engineered using **morluto/rea (Reverse Engineering Agent)** and recreated as a production-grade Next.js App Router application.
+
+## Quick Start
+\`\`\`bash
+npm install
+npm run dev
+\`\`\`
+Visit [http://localhost:3000](http://localhost:3000)
+
+## Design System Tokens
+- **Brand Name**: ${brand}
+- **Primary Color**: ${primary}
+- **Secondary Accent**: ${secondary}
+- **Typography Font**: ${font}
+- **Theme Mode**: ${isDark ? "Dark theme (slate-950 base)" : "Light theme (white base)"}
+
+## Claude Code CLI Commands
+Run these commands in your terminal with Claude Code:
+
+\`\`\`bash
+# 1. Inspect design tokens and add a new section
+claude "Review components/ and create a new FeaturesBento component following the ${primary} / ${secondary} color tokens"
+
+# 2. Add an interactive contact or newsletter modal
+claude "Add an interactive lead capture modal to app/page.tsx with Tailwind form inputs"
+
+# 3. Test and build for production
+claude "Run npm run build and resolve any TypeScript errors"
+\`\`\`
+
+## REA (morluto/rea) Architecture
+- Architecture: Next.js 15+ App Router, Tailwind CSS v4, Lucide Icons
+- Modular components in \`components/\`
+- Dynamic pages and route layouts in \`app/\`
+`,
+    });
+
+    // Deduplicate by path to ensure 100% unique React keys
+    const unique = new Map<string, FileItem>();
+    for (const f of generatedFiles) {
+      unique.set(f.path, f);
+    }
+    return Array.from(unique.values());
   }, [doc]);
 
   const activeFile = files.find((f) => f.path === activePath) || files[0];
@@ -392,7 +446,10 @@ module.exports = {
 
   const grouped = useMemo(() => {
     const map = new Map<string, FileItem[]>();
+    const seenPaths = new Set<string>();
     for (const f of files) {
+      if (seenPaths.has(f.path)) continue;
+      seenPaths.add(f.path);
       const list = map.get(f.folder) || [];
       list.push(f);
       map.set(f.folder, list);
@@ -468,17 +525,17 @@ module.exports = {
 
           <div className="space-y-4">
             {Array.from(grouped.entries()).map(([folder, items]) => (
-              <div key={folder}>
+              <div key={`folder-${folder}`}>
                 <div className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-semibold text-slate-400">
                   <FolderOpen size={13} className="text-violet-400" />
                   <span>{folder}</span>
                 </div>
                 <div className="mt-0.5 space-y-0.5">
-                  {items.map((item) => {
+                  {items.map((item, fileIdx) => {
                     const isActive = item.path === activePath;
                     return (
                       <button
-                        key={item.path}
+                        key={`file-tree-${folder}-${item.path}-${fileIdx}`}
                         onClick={() => setActivePath(item.path)}
                         className={`flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs transition ${
                           isActive
